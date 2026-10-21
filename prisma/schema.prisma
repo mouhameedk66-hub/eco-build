@@ -1,0 +1,321 @@
+// Eco-Build | معمار البيئة — Prisma schema
+// SQLite for local MVP. Swap provider to postgresql for production.
+// NOTE: SQLite has no native enum support in Prisma, so status/type fields
+// below are typed String and validated against the TS unions in src/types.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  name         String
+  nameAr       String
+  role         String
+  phone        String?
+  avatarSeed   String?
+  createdAt    DateTime @default(now())
+
+  contractor   Contractor?
+  carrier      Carrier?
+  recyclingCenter RecyclingCenter?
+
+  @@map("users")
+}
+
+model Contractor {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName   String
+  companyNameAr String
+  city          String
+  phone         String
+  createdAt     DateTime @default(now())
+
+  wasteRequests WasteRequest[]
+  orders        Order[]
+
+  @@map("contractors")
+}
+
+model Carrier {
+  id            String   @id @default(cuid())
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName   String
+  companyNameAr String
+  city          String
+  lat           Float
+  lng           Float
+  rating        Float    @default(4.5)
+  capacityTons  Float
+  pricePerKm    Float
+  phone         String
+  createdAt     DateTime @default(now())
+
+  drivers       Driver[]
+  trucks        Truck[]
+  shipments     Shipment[]
+
+  @@map("carriers")
+}
+
+model Driver {
+  id         String   @id @default(cuid())
+  carrierId  String
+  carrier    Carrier  @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+  name       String
+  nameAr     String
+  phone      String
+  licenseNo  String
+  rating     Float    @default(4.6)
+
+  shipments  Shipment[]
+
+  @@map("drivers")
+}
+
+model Truck {
+  id            String      @id @default(cuid())
+  carrierId     String
+  carrier       Carrier     @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+  plateNumber   String
+  type          String
+  capacityTons  Float
+  status        String      @default("AVAILABLE")
+
+  shipments     Shipment[]
+
+  @@map("trucks")
+}
+
+model WasteRequest {
+  id             String        @id @default(cuid())
+  contractorId   String
+  contractor     Contractor    @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  projectName    String
+  projectNameAr  String
+  city           String
+  address        String
+  lat            Float
+  lng            Float
+  description    String
+  status         String        @default("PENDING")
+  createdAt      DateTime      @default(now())
+
+  images         WasteImage[]
+  classification AIClassification?
+  shipment       Shipment?
+
+  @@map("waste_requests")
+}
+
+model WasteImage {
+  id             String       @id @default(cuid())
+  wasteRequestId String
+  wasteRequest   WasteRequest @relation(fields: [wasteRequestId], references: [id], onDelete: Cascade)
+  url            String
+  createdAt      DateTime     @default(now())
+
+  @@map("waste_images")
+}
+
+model AIClassification {
+  id               String       @id @default(cuid())
+  wasteRequestId   String       @unique
+  wasteRequest     WasteRequest @relation(fields: [wasteRequestId], references: [id], onDelete: Cascade)
+  wasteType        String
+  wasteTypeAr      String
+  confidence       Float
+  estimatedWeight  Float
+  recyclable       Boolean
+  recommendations  String
+  modelVersion     String       @default("eco-mock-classifier-v1")
+  createdAt        DateTime     @default(now())
+
+  @@map("ai_classifications")
+}
+
+model RecyclingCenter {
+  id                  String   @id @default(cuid())
+  userId              String?  @unique
+  user                User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String
+  nameAr              String
+  city                String
+  address             String
+  lat                 Float
+  lng                 Float
+  capacityTonsPerDay  Float
+  acceptedWasteTypes  String
+  phone               String
+  licensed            Boolean  @default(true)
+  processingTimeHours Float    @default(6)
+  createdAt           DateTime @default(now())
+
+  shipments           Shipment[]
+  materials           RecycledMaterial[]
+  products            MarketplaceProduct[]
+
+  @@map("recycling_centers")
+}
+
+model Shipment {
+  id                String         @id @default(cuid())
+  wasteRequestId    String         @unique
+  wasteRequest      WasteRequest   @relation(fields: [wasteRequestId], references: [id], onDelete: Cascade)
+  carrierId         String
+  carrier           Carrier        @relation(fields: [carrierId], references: [id])
+  driverId          String
+  driver            Driver         @relation(fields: [driverId], references: [id])
+  truckId           String
+  truck             Truck          @relation(fields: [truckId], references: [id])
+  recyclingCenterId String
+  recyclingCenter   RecyclingCenter @relation(fields: [recyclingCenterId], references: [id])
+
+  status            String         @default("PENDING")
+  pickupLat         Float
+  pickupLng         Float
+  destLat           Float
+  destLng           Float
+  currentLat        Float
+  currentLng        Float
+  routeJson         String
+  distanceKm        Float
+  estimatedCostSar  Float
+  etaMinutes        Int
+  speedKph          Float          @default(0)
+  progressPct       Float          @default(0)
+  departureTime      DateTime?
+  arrivalTime         DateTime?
+  lastGpsUpdate      DateTime?
+  flagged            Boolean        @default(false)
+  flagReason         String?
+  createdAt          DateTime       @default(now())
+
+  gpsPoints          GPSPoint[]
+  manifest           DigitalManifest?
+  events             ShipmentEvent[]
+  alerts             Alert[]
+
+  @@map("shipments")
+}
+
+model GPSPoint {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  latitude   Float
+  longitude  Float
+  speed      Float
+  status     String
+  timestamp  DateTime @default(now())
+
+  @@map("gps_points")
+}
+
+model ShipmentEvent {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  stage      String
+  stageAr    String
+  timestamp  DateTime @default(now())
+  note       String?
+
+  @@map("shipment_events")
+}
+
+model DigitalManifest {
+  id             String    @id @default(cuid())
+  shipmentId     String    @unique
+  shipment       Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  manifestNumber String    @unique
+  verified       Boolean   @default(false)
+  qrData         String
+  closedAt       DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@map("digital_manifests")
+}
+
+model RecycledMaterial {
+  id                String          @id @default(cuid())
+  recyclingCenterId String
+  recyclingCenter   RecyclingCenter @relation(fields: [recyclingCenterId], references: [id], onDelete: Cascade)
+  materialType      String
+  quantityTons      Float
+  receivedAt        DateTime        @default(now())
+
+  @@map("recycled_materials")
+}
+
+model MarketplaceProduct {
+  id                String          @id @default(cuid())
+  recyclingCenterId String
+  recyclingCenter   RecyclingCenter @relation(fields: [recyclingCenterId], references: [id], onDelete: Cascade)
+  name              String
+  nameAr            String
+  materialType      String
+  description       String
+  descriptionAr     String
+  price             Float
+  unit              String          @default("طن")
+  quantityAvailable Float
+  location          String
+  imageSeed         String
+  status            String          @default("ACTIVE")
+  createdAt         DateTime        @default(now())
+
+  orderItems        OrderItem[]
+
+  @@map("marketplace_products")
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  contractorId  String
+  contractor    Contractor  @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  status        String      @default("PENDING")
+  totalAmount   Float
+  deliveryCity  String
+  createdAt     DateTime    @default(now())
+
+  items         OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String              @id @default(cuid())
+  orderId   String
+  order     Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   MarketplaceProduct  @relation(fields: [productId], references: [id])
+  quantity  Float
+  unitPrice Float
+
+  @@map("order_items")
+}
+
+model Alert {
+  id         String        @id @default(cuid())
+  type       String
+  severity   String
+  shipmentId String?
+  shipment   Shipment?     @relation(fields: [shipmentId], references: [id], onDelete: SetNull)
+  message    String
+  messageAr  String
+  resolved   Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+
+  @@map("alerts")
+}

@@ -1,0 +1,39 @@
+"use client";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Landmark, Mail, Phone } from "lucide-react";
+import { useLang } from "@/lib/i18n";
+
+export default function AuthorityProfilePage() {
+  const { lang, T } = useLang();
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <h1 className="text-xl font-bold">{T("profile")}</h1>
+      <Card>
+        <CardContent className="flex items-center gap-4 p-6">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary"><Landmark className="h-8 w-8" /></div>
+          <div>
+            <p className="text-lg font-bold">{lang === "ar" ? "موان - الهيئة الوطنية لإدارة النفايات" : "MWAN National Waste Authority"}</p>
+            <Badge variant="info" className="mt-1">{lang === "ar" ? "هيئة تنظيمية" : "Regulatory Authority"}</Badge>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="space-y-4 p-6 text-sm">
+          <Row icon={Mail} label={lang === "ar" ? "البريد الإلكتروني" : "Email"} value="authority@ecobuild.demo" />
+          <Row icon={Phone} label={lang === "ar" ? "الهاتف" : "Phone"} value="0112345678" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function Row({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between border-b border-border pb-3 last:border-0 last:pb-0">
+      <span className="flex items-center gap-2 text-muted-foreground"><Icon className="h-4 w-4" /> {label}</span>
+      <span className="font-medium" dir="ltr">{value}</span>
+    </div>
+  );
+}

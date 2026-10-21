@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 40 33% 98%;
+  --foreground: 160 30% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 160 30% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 160 30% 10%;
+  --primary: 152 54% 33%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 38 45% 94%;
+  --secondary-foreground: 160 30% 15%;
+  --muted: 40 20% 95%;
+  --muted-foreground: 160 10% 40%;
+  --accent: 42 80% 52%;
+  --accent-foreground: 160 30% 10%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 160 15% 88%;
+  --input: 160 15% 88%;
+  --ring: 152 54% 33%;
+  --radius: 0.75rem;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+[dir="rtl"] {
+  font-family: var(--font-sans), "Tahoma", "Segoe UI", sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.25);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.4);
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.scan-gradient {
+  background: linear-gradient(180deg, transparent, hsl(var(--primary) / 0.35), transparent);
+  background-size: 100% 50%;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+}
