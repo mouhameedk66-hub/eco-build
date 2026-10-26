@@ -20,7 +20,7 @@ export function middleware(req: NextRequest) {
   const session = token ? decodeSession(token) : null;
 
   // Temporary diagnostic logs. Never log the cookie or token.
-  console.log("[auth-debug]", {
+  console.log("[auth-debug-v2]", {
     pathname,
     hasCookie: Boolean(token),
     sessionDecoded: Boolean(session),
