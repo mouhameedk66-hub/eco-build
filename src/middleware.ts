@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE, decodeSession } from "@/lib/session";
 
@@ -10,12 +11,26 @@ const roleBasePath: Record<string, string> = {
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (!pathname.startsWith("/dashboard")) return NextResponse.next();
+
+  if (!pathname.startsWith("/dashboard")) {
+    return NextResponse.next();
+  }
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? decodeSession(token) : null;
 
-  if (!session) {
+  // Temporary diagnostic logs. Never log the cookie or token.
+  console.log("[auth-debug]", {
+    pathname,
+    hasCookie: Boolean(token),
+    sessionDecoded: Boolean(session),
+    role: session?.role ?? null,
+    hasAllowedRole: Boolean(
+      session && roleBasePath[session.role]
+    ),
+  });
+
+  if (!session || !roleBasePath[session.role]) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
@@ -23,7 +38,8 @@ export function middleware(req: NextRequest) {
   }
 
   const allowedBase = roleBasePath[session.role];
-  if (allowedBase && !pathname.startsWith(allowedBase)) {
+
+  if (!pathname.startsWith(allowedBase)) {
     const url = req.nextUrl.clone();
     url.pathname = allowedBase;
     return NextResponse.redirect(url);
